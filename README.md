@@ -81,7 +81,13 @@ node src/cli.mjs status <transcription-task-id>
 
 将 `node`、`<项目路径>/src/cli.mjs`、`mcp` 配置为 Agent 的 stdio 服务。提供 43 个 `tdocs_<tool-id>` 工具和目录、额度、上传、查询，共 47 个 MCP 工具。
 
-网页剪存使用腾讯文档官方 MCP，读取本机已有的 `TENCENT_DOCS_TOKEN`。Windows 也读取当前用户环境变量中的已有配置。其他工具主要使用登录时保存的网页会话。
+网页剪存使用已登录的网页会话提交和查询。工具箱使用自己的腾讯文档账号登录。
+
+## DSH 插件
+
+[DSH 腾讯文档工具箱](https://github.com/vb2250158/dsh-tencent-docs-toolbox) 提供侧栏入口和 48 个 Agent 工具。安装后自动检查已保存的登录，需要登录时打开独立 Chrome 窗口。完成 QQ 或微信登录后自动保存并关闭窗口，后续复用登录态。
+
+插件通过本包的 `session`、`runtime` 和 `server` 导出复用账号、任务和 WebGUI。嵌入模式支持固定资源前缀和同源主题同步。
 
 ## 文件、登录与恢复
 

@@ -1,6 +1,6 @@
 {
   "name": "tencent-docs-web-proxy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Tencent Docs toolbox with local WebGUI, live entitlements, HTTP API and Agent MCP tools",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,17 @@
     "tdocs-transcribe": "src/cli.mjs",
     "tdocs-toolbox": "src/cli.mjs"
   },
-  "exports": "./src/client.mjs",
+  "exports": {
+    ".": "./src/client.mjs",
+    "./runtime": "./src/toolbox-service.mjs",
+    "./session": "./src/session-controller.mjs",
+    "./server": "./src/server.mjs",
+    "./state": "./src/state.mjs",
+    "./transcription": "./src/service.mjs",
+    "./catalog": "./src/tool-catalog.mjs",
+    "./errors": "./src/errors.mjs",
+    "./package.json": "./package.json"
+  },
   "files": [
     "src",
     "web",

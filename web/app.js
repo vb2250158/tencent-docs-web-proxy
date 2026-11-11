@@ -1,4 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
+const apiBase = document.body.dataset.apiBase ?? '';
 const state = {
   catalog: null,
   limits: null,
@@ -57,7 +58,7 @@ function node(tag, className, text) {
 
 async function api(path, options = {}) {
   const headers = new Headers(options.headers);
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBase}${path}`, {
     ...options,
     headers,
     credentials: "same-origin",
@@ -386,7 +387,7 @@ function renderSelectedFiles() {
 function safeLink(address, text, download = false) {
   let url;
   try {
-    url = new URL(address, location.origin);
+    url = new URL(address.startsWith('/v1/') ? `${apiBase}${address}` : address, location.origin);
   } catch {
     return null;
   }
@@ -834,3 +835,13 @@ async function initialize() {
 }
 
 initialize();
+
+// The embedding application supplies only theme colors, never account material.
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'tdocs-toolbox-theme') return;
+  const allowed = new Set(['--ink','--muted','--paper','--line','--accent','--accent-light','--white']);
+  for (const [key, value] of Object.entries(event.data.colors ?? {})) {
+    if (allowed.has(key) && typeof value === 'string' && value.length < 256 && CSS.supports('color', value)) document.documentElement.style.setProperty(key,value);
+  }
+  if (['light','dark'].includes(event.data.colorScheme)) document.documentElement.style.colorScheme = event.data.colorScheme;
+});

@@ -430,27 +430,13 @@ export class ToolboxService {
           "请提供公开网页的 HTTP 或 HTTPS 地址。",
           { status: 400 },
         );
-      const response = await this.official.call("scrape_url", {
-        url: target.href,
-        content_type: "smartcanvas",
-      });
-      if (response.error)
-        throw new ProxyError("UPSTREAM_REJECTED", "网页剪存提交失败。", {
-          status: 422,
-        });
-      if (response.url)
-        return this.complete(job.id, {
-          documentUrl: this.documentUrl(response.url),
-        });
-      if (!response.task_id)
-        throw new ProxyError(
-          "UPSTREAM_INVALID_RESPONSE",
-          "网页剪存未返回任务编号。",
-        );
-      return this.jobs.update(job.id, {
-        state: "running",
-        operation: { kind: "official-scrape", id: response.task_id },
-      });
+      const operationId = job.id.slice(0, 24);
+      await this.jobs.update(job.id, { state: 'submitting', operation: { kind: 'native-clip', id: operationId } });
+      const response = await this.transport.call('clipPage', { body: { url: target.href, operationId, parentId: '' } });
+      const result = response.result;
+      if (!result?.padId && !result?.needProgress) throw new ProxyError('UPSTREAM_INVALID_RESPONSE', '网页剪存未返回文档或进度信息。');
+      const documentUrl = result.docUrl ?? result.url;
+      return this.jobs.update(job.id, { state: 'running', operation: { kind: 'native-clip', id: operationId, padId: result.padId, documentUrl } });
     }
     throw new ProxyError("UNKNOWN_TOOL", "The selected tool has no runner.", {
       status: 400,
@@ -770,6 +756,18 @@ export class ToolboxService {
   }
 
   async refresh(job) {
+    if (job.operation.kind === 'native-clip') {
+      const response = await this.transport.call('clipProgress', { body: { operationId: job.operation.id, padId: job.operation.padId } });
+      const result = response.result;
+      if (result?.status === 'failed') return this.jobs.update(job.id, { state: 'failed', error: { code: 'CLIP_FAILED', message: '腾讯文档未能剪存此网页。' } });
+      if (Number(result?.progress) === 100) {
+        const address = result.docUrl ?? job.operation.documentUrl;
+        if (!address) throw new ProxyError('UPSTREAM_INVALID_RESPONSE', '剪存完成，但尚未取得文档链接。');
+        return this.complete(job.id, { documentUrl: this.documentUrl(address) });
+      }
+      return this.jobs.update(job.id, { progress: Number(result?.progress ?? 0) });
+    }
+
     if (job.operation.kind === "batch") {
       const children = await Promise.all(
         job.operation.children.map((id) => this.status(id)),

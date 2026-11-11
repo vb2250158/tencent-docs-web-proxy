@@ -16,8 +16,9 @@ import { VERSION } from "./version.mjs";
 /** Loopback-only HTTP API. It accepts media bytes, never arbitrary local file paths or remote URLs. */
 export function createProxyServer(
   service,
-  { root, maxBytes = MAX_MEDIA_BYTES, logger = () => {} },
+  { root, maxBytes = MAX_MEDIA_BYTES, logger = () => {}, basePath = '', embedded = false },
 ) {
+  if (basePath && !/^\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(basePath)) throw new ProxyError('INVALID_BASE_PATH', 'The embedded application path must be a fixed absolute URL path.', { status: 400 });
   const server = createServer(async (request, response) => {
     const requestId = randomUUID();
     const send = (status, value) => {
@@ -51,15 +52,18 @@ export function createProxyServer(
       };
       if (request.method === "GET" && assets[route]) {
         const [file, type] = assets[route];
-        const content = await readFile(
+        let content = await readFile(
           new URL(`../web/${file}`, import.meta.url),
         );
+        if (file === 'index.html' && basePath) {
+          content = Buffer.from(content.toString('utf8').replace('href="/style.css"', `href="${basePath}/style.css"`).replace('src="/app.js"', `src="${basePath}/app.js"`).replace('href="/"', `href="${basePath}/"`).replace('<body>', `<body data-api-base="${basePath}" data-embedded="${embedded ? 'true' : 'false'}">`));
+        }
         response.writeHead(200, {
           "content-type": type,
           "cache-control": "no-store",
           "x-content-type-options": "nosniff",
           "content-security-policy":
-            "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+            `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors ${embedded ? "'self'" : "'none'"}`,
         });
         response.end(content);
         return;

@@ -973,3 +973,22 @@ summary {
     scroll-behavior: auto !important;
   }
 }
+
+body[data-embedded="true"] { --sidebar: 180px; }
+body[data-embedded="true"] .brand { padding-bottom: 24px; font-size: 15px; }
+body[data-embedded="true"] .topbar { height: 52px; }
+body[data-embedded="true"] .heading-row { margin-bottom: 20px; }
+body[data-embedded="true"] h1 { font-size: 25px; }
+body[data-embedded="true"] .workspace { min-height: 100vh; }
+body[data-embedded="true"] .tool-card,
+body[data-embedded="true"] .quota-strip,
+body[data-embedded="true"] .search,
+body[data-embedded="true"] dialog,
+body[data-embedded="true"] .sidebar,
+body[data-embedded="true"] .job { background: var(--white); }
+body[data-embedded="true"] .dropzone,
+body[data-embedded="true"] .field input,
+body[data-embedded="true"] .field select,
+body[data-embedded="true"] .field textarea,
+body[data-embedded="true"] .job-text { background: var(--paper); color: var(--ink); }
+@media(max-width:700px) { body[data-embedded="true"] { --sidebar: 0px; } }

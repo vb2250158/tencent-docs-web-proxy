@@ -94,7 +94,7 @@ export class ToolboxAiClient {
           "The AI endpoint did not return an event stream.",
         );
       }
-      throw new ProxyError(
+      const rejection = new ProxyError(
         "AI_REJECTED",
         "The AI service rejected this request. Check authorization, input and credits.",
         {
@@ -104,6 +104,8 @@ export class ToolboxAiClient {
           },
         },
       );
+      this.transport.onAuthenticationFailure?.(rejection);
+      throw rejection;
     }
     const result = {
       text: "",
@@ -151,6 +153,7 @@ export class ToolboxAiClient {
       });
     } catch (error) {
       if (error instanceof ProxyError) {
+        this.transport.onAuthenticationFailure?.(error);
         error.details = {
           ...error.details,
           conversationId: result.conversationId,
