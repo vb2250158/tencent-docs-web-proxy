@@ -1,0 +1,23 @@
+{
+  "name": "tencent-docs-web-proxy",
+  "version": "0.1.0",
+  "description": "Local API and CLI for Tencent Docs web audio/video transcription entitlements",
+  "type": "module",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/vb2250158/tencent-docs-web-proxy.git" },
+  "bugs": { "url": "https://github.com/vb2250158/tencent-docs-web-proxy/issues" },
+  "homepage": "https://github.com/vb2250158/tencent-docs-web-proxy#readme",
+  "engines": { "node": ">=24.15.0" },
+  "bin": { "tdocs-transcribe": "src/cli.mjs" },
+  "exports": "./src/client.mjs",
+  "files": ["src", "docs", "README.md", "LICENSE", "CHANGELOG.md"],
+  "scripts": {
+    "start": "node src/cli.mjs serve",
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "3.0.0",
+    "playwright-core": "1.65.0"
+  }
+}
