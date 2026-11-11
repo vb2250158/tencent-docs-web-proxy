@@ -1,9 +1,11 @@
 # Security
 
-Report a suspected vulnerability through the repository's private vulnerability reporting feature when available. Public issues should contain only a minimal synthetic reproduction.
+Report a suspected vulnerability through the repository's private vulnerability reporting feature when available. Public reports should contain a minimal synthetic reproduction.
 
-Do not publish real Cookie headers, API tokens, COS temporary credentials, browser profiles, HAR files, audio/video recordings, transcripts or private document URLs. Runtime data belongs outside this repository. If a credential was exposed, invalidate the relevant session and replace the local API token.
+The local WebGUI and HTTP API open directly on IPv4 loopback. The service checks Host and browser Origin and binds to `127.0.0.1`. Starting the server grants local applications access to the signed-in Tencent Docs toolbox.
 
-The HTTP API binds only to IPv4 loopback, requires a local Bearer token and rejects browser Origin headers and unexpected Host headers. Upstream web requests are restricted to the known Tencent Docs paths and do not follow redirects. COS uploads use temporary provider credentials. There is no generic URL forwarding, credential extraction from existing browser databases, account sharing service or remote-listener mode.
+Web requests use named endpoints on `https://docs.qq.com` and reject redirects. File transfers use scoped provider credentials or provider-returned HTTPS links. Tencent Docs cookies stay on the Tencent Docs origin. Third-party tools provide a native provider workflow with their own authorization requirements.
 
-Windows session files are protected with the current user's DPAPI. Other platforms use file permissions; Chrome's dedicated login profile contains sensitive browser data on every platform. Keep the entire runtime directory private.
+Keep cookies, official MCP tokens, COS credentials, browser profiles, recordings, transcripts, runtime journals and private document URLs in the private runtime directory. Windows session files use current-user DPAPI. Other platforms use private file permissions.
+
+Durable request IDs and task receipts preserve unknown write outcomes. Interrupted writes require reconciliation under the original identity. Per-file results remain available when a batch has unresolved items. Editor and plugin handoffs remain in `user_action_required` while the user completes the native interaction.

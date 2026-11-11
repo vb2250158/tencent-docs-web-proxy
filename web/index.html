@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>文档工具箱</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到工具列表</a>
+    <aside class="sidebar">
+      <a href="/" class="brand"
+        ><span class="brand-mark">文</span
+        ><span>文档工具箱<small>TENCENT DOCS · LOCAL</small></span></a
+      >
+      <div class="nav-label">工作台</div>
+      <nav id="categories" aria-label="工具分类"></nav>
+      <button class="nav-item" id="jobs-nav">
+        <span class="nav-symbol">↗</span>任务记录<span
+          id="job-count"
+          class="nav-count"
+        ></span>
+      </button>
+      <div class="sidebar-bottom">
+        <span class="connection-dot"></span
+        ><span id="connection-state">正在连接</span><span id="version"></span>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <span id="breadcrumb">工作台 / 全部工具</span>
+        <div class="topbar-actions">
+          <button id="refresh" class="quiet">刷新额度</button>
+        </div>
+      </header>
+      <main id="main">
+        <section class="heading-row">
+          <div>
+            <p class="eyebrow">让文件处理更顺手</p>
+            <h1 id="page-title">你的文档工作台</h1>
+            <p class="lead" id="page-description">
+              转换、提取、创作。找到工具，直接开始。
+            </p>
+          </div>
+          <div class="tool-total">
+            <strong id="tool-total">43</strong><span>个工具</span>
+          </div>
+        </section>
+        <section class="quota-strip" aria-label="账号额度">
+          <div class="quota-item">
+            <span class="quota-label">文档 AI 积分</span>
+            <div><strong id="document-points">—</strong><span>积分</span></div>
+            <small>腾讯文档内使用</small>
+          </div>
+          <div class="quota-item">
+            <span class="quota-label">Buddy One</span>
+            <div><strong id="buddy-points">—</strong><span>积分</span></div>
+            <small id="pool-preference">正在读取积分池</small>
+          </div>
+          <div class="quota-item">
+            <span class="quota-label">音视频转写</span>
+            <div><strong id="audio-quota">—</strong><span>剩余分钟</span></div>
+            <small id="audio-total">正在读取可用时长</small>
+          </div>
+          <div class="quota-summary">
+            <span class="live-pill"><span></span>账号实时额度</span>
+            <p id="updated-at">查询中</p>
+            <small id="quota-error"></small>
+          </div>
+        </section>
+        <section class="tools-section" id="tools-section">
+          <div class="list-toolbar">
+            <div>
+              <h2 id="section-title">全部工具</h2>
+              <span id="result-count"></span>
+            </div>
+            <label class="search"
+              ><span>⌕</span
+              ><input
+                id="search"
+                type="search"
+                placeholder="搜索工具名称或用途"
+                aria-label="搜索工具"
+            /></label>
+          </div>
+          <div id="tools-grid" class="tools-grid" aria-live="polite"></div>
+          <div id="empty" class="empty hidden">
+            没有匹配的工具，换个关键词试试。
+          </div>
+        </section>
+        <section id="jobs-section" class="hidden">
+          <div class="list-toolbar">
+            <h2>任务记录</h2>
+            <button class="quiet" id="reload-jobs">刷新记录</button>
+          </div>
+          <div id="jobs-list"></div>
+        </section>
+        <footer>
+          文件与登录信息保存在本机运行目录
+          <span id="footer-status">正在连接本地服务</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="tool-dialog">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow" id="dialog-category"></p>
+          <h2 id="dialog-title"></h2>
+        </div>
+        <button class="close" id="close-tool" aria-label="关闭工具">×</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-limits" id="dialog-limits"></div>
+        <form id="tool-form">
+          <div id="file-field">
+            <label class="field-label" for="files">选择文件</label
+            ><label class="dropzone" id="dropzone" for="files"
+              ><span class="upload-symbol">↑</span
+              ><strong>拖入文件，或点击选择</strong
+              ><span id="file-hint">文件将交给所选工具处理</span
+              ><input id="files" type="file" multiple
+            /></label>
+            <div id="selected-files"></div>
+          </div>
+          <div id="prompt-field" class="field hidden">
+            <label for="prompt">希望生成什么内容</label
+            ><textarea
+              id="prompt"
+              rows="4"
+              placeholder="写下主题、结构和内容要求"
+            ></textarea>
+          </div>
+          <div id="markdown-field" class="field hidden">
+            <label for="markdown">Markdown 内容</label
+            ><textarea
+              id="markdown"
+              rows="6"
+              placeholder="# 主题&#10;## 分支一&#10;## 分支二"
+            ></textarea>
+          </div>
+          <div id="url-field" class="field hidden">
+            <label for="target-url">网页地址</label
+            ><input
+              id="target-url"
+              type="url"
+              placeholder="https://example.com/article"
+            />
+          </div>
+          <div id="pages-field" class="field hidden">
+            <label for="pages">页面顺序 / 范围</label
+            ><input id="pages" placeholder="例如 1,3-5 或 3,2,1" /><small
+              >留空处理全部页面，页码从 1 开始。</small
+            >
+          </div>
+          <div id="pdf-edit-fields" class="hidden">
+            <div class="field">
+              <label for="pdf-text">添加文字</label
+              ><input id="pdf-text" placeholder="输入要写入 PDF 的文字" />
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="pdf-page">页码</label
+                ><input id="pdf-page" type="number" min="1" value="1" />
+              </div>
+              <div class="field">
+                <label for="pdf-x">横向位置</label
+                ><input id="pdf-x" type="number" value="72" />
+              </div>
+              <div class="field">
+                <label for="pdf-y">距底部位置</label
+                ><input id="pdf-y" type="number" value="600" />
+              </div>
+            </div>
+          </div>
+          <div id="outline-field" class="field hidden">
+            <label for="outline">收集表题目</label
+            ><textarea
+              id="outline"
+              rows="5"
+              placeholder="每行一道题目&#10;姓名&#10;联系方式&#10;希望参加的活动"
+            ></textarea>
+          </div>
+          <div id="translation-fields" class="form-row hidden">
+            <div class="field">
+              <label for="source-language">源语言</label
+              ><select id="source-language">
+                <option value="">在原生界面选择</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="target-language">目标语言</label
+              ><select id="target-language">
+                <option value="">在原生界面选择</option>
+              </select>
+            </div>
+          </div>
+          <div id="audio-fields" class="form-row hidden">
+            <div class="field">
+              <label for="language">识别语言</label
+              ><select id="language">
+                <option value="16k_zh">中文</option>
+                <option value="16k_en">英语</option>
+                <option value="16k_yue">粤语</option>
+                <option value="16k_ja">日语</option>
+                <option value="16k_ko">韩语</option>
+                <option value="16k_fr">法语</option>
+              </select>
+            </div>
+            <div id="recording-field" class="field hidden">
+              <label>语音速记</label>
+              <div class="form-row">
+                <button id="start-recording" class="quiet" type="button">
+                  开始录音</button
+                ><button
+                  id="stop-recording"
+                  class="quiet"
+                  type="button"
+                  disabled
+                >
+                  停止录音</button
+                ><span id="recording-status">可录音或选择已有音频</span>
+              </div>
+              <audio id="recording-preview" controls class="hidden"></audio>
+            </div>
+            <label class="checkbox"
+              ><input id="speakers" type="checkbox" />区分说话人</label
+            >
+          </div>
+          <div id="image-fields" class="form-row hidden">
+            <div class="field">
+              <label for="direction">拼接方向</label
+              ><select id="direction">
+                <option value="vertical">纵向</option>
+                <option value="horizontal">横向</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="quality">图片质量</label
+              ><input id="quality" type="number" min="1" max="100" value="75" />
+            </div>
+          </div>
+          <div id="native-notice" class="notice hidden"></div>
+          <details id="advanced">
+            <summary>更多参数</summary>
+            <label class="field" for="options-json"
+              ><span>工具参数 JSON</span
+              ><textarea
+                id="options-json"
+                rows="4"
+                placeholder='{"title":"输出名称"}'
+              ></textarea>
+            </label>
+          </details>
+          <p id="form-error" class="form-error" role="alert"></p>
+          <div class="dialog-actions">
+            <span id="submit-note">提交后可继续使用其他工具</span
+            ><button class="primary" id="submit-tool" type="submit">
+              开始处理 <span>↗</span>
+            </button>
+          </div>
+        </form>
+        <div id="task-result" class="hidden" aria-live="polite"></div>
+      </div>
+    </dialog>
+    <div id="toast" class="toast hidden" role="status"></div>
+  </body>
+</html>

@@ -1,81 +1,97 @@
-# Tencent Docs web transcription proxy
+# 腾讯文档工具箱
 
-将腾讯文档网页端的音视频转文字能力接入本地 CLI 和 HTTP API，使用你自己的腾讯文档账号及转写时长。支持查询剩余额度、上传本地音视频、提交转写、查询进度和取得结果文档链接。
+本地 WebGUI、HTTP API 和 Agent MCP，接入腾讯文档工具箱的 43 项工具。使用自己的腾讯文档账号处理文件，查看积分、转写时长、文件限制和任务结果。
 
-Local CLI and authenticated loopback API for Tencent Docs audio/video transcription, using your own web account and transcription entitlement.
+Tencent Docs toolbox with a local WebGUI, live entitlements, HTTP API and Agent MCP tools.
 
-这是社区实现，使用腾讯文档网页接口。AI 助手积分、腾讯云 ASR 计费和通用大模型代理属于不同能力，本项目首版聚焦转写分钟数。网页协议及登录方式可能变化，接口依据和验证范围见 [协议记录](docs/protocol.md)。
+## 开始使用
 
-## 安装与登录
-
-需要 Node.js 24.15+ 和已安装的 Google Chrome。
+需要 Node.js 24.15+，首次登录需要 Google Chrome。
 
 ```sh
 npm ci --ignore-scripts
 node src/cli.mjs login
+npm start
 ```
 
-登录命令打开独立 Chrome 配置目录。使用 QQ 或微信登录腾讯文档后，在终端按 Enter；程序回读转写额度，再保存登录态。它不会读取你日常 Chrome 的 Cookie 数据库。
+登录窗口中使用 QQ 或微信登录，回到终端按 Enter 保存会话。随后打开 [本地工具箱](http://127.0.0.1:17832/)，可以直接使用。端口通过 `TDOCS_PROXY_PORT` 调整。
 
-默认运行数据目录是 Windows 的 `%LOCALAPPDATA%/tencent-docs-web-proxy`，其他系统使用 `~/.local/share/tencent-docs-web-proxy`。可设置 `TDOCS_PROXY_STATE_DIR` 改到其他仓库外目录。Windows 登录态使用当前用户的 DPAPI 加密；其他系统使用权限为 `0600` 的文件。独立 Chrome 配置本身也包含登录资料，应作为私有运行数据保管。
+WebGUI 提供分类、搜索、上传、录音、参数填写、进度、文档链接与下载。顶部显示文档 AI 积分、Buddy One 积分和转写时长，每张卡片显示文件限制、额度和验收状态。
 
-已有专用 Cookie 的自动化环境也可通过 `TDOCS_COOKIE` 注入；其中必须包含腾讯文档 `TOK`。请在本机私有环境中配置，避免放进仓库、命令参数、聊天、日志或 Issue。
+## 工具和验收范围
 
-## 命令行
+目录去重后共有 43 项，PDF 转图片与文件转图片共享同一入口。
 
-```sh
-node src/cli.mjs quota
-node src/cli.mjs transcribe ./sample.wav --language 16k_zh --wait
-node src/cli.mjs transcribe ./meeting.mp4 --speakers --request-id meeting-001
-node src/cli.mjs status <task-id>
-node src/cli.mjs wait <task-id>
-node src/cli.mjs history
-```
+- 33 项自动处理工具已完成真实账号或实际文件验收，覆盖 PDF、Office、图片、思维导图、AI 创作、收集表和音视频。
+- 智能翻译、简历美化、图片转简历提供原生编辑器接续流程，最终翻译或排版由用户在对应编辑器完成。
+- 7 项第三方插件提供服务商信息、授权状态和原生入口，包含简历范文、简历分析、证件照、草料二维码、魔法擦除、抠图及电子合同。插件结果及合同签署需要在其界面完成。
 
-提交返回 `requestId`、腾讯任务 `taskId` 和识别到的 `durationSeconds`。完成后返回 `fileUrl`，可在腾讯文档中打开文字结果。首版返回结果文档链接，尚未实现全文 TXT/SRT 导出。
+逐项能力和验证结果见 [工具清单](docs/toolbox.md) 和 [验收记录](docs/validation.md)。
 
-`--language` 使用网页端引擎标识，默认 `16k_zh`；例如 `16k_en`、`16k_yue`、`16k_ja`。区分说话人目前只支持网页明确开放的中文、英语、马来语和印度尼西亚语。网页每文件限制为 1 GiB、5 小时，实际可用格式与额度以腾讯文档响应为准。
+## 额度显示
+
+当前账号权益返回 `unlimit=true` 时，界面显示“无限量”。本地处理显示“无限量（本地）”，同时列出文件大小和处理限制。服务端没有返回独立额度时显示“服务未返回独立额度”。
+
+语音速记与音视频转文字共用权益编号 25，余额按秒读取并换算为分钟。录音结束后提交转写，麦克风由用户在浏览器中开启，也可上传已有音频。
+
+文档积分和 Buddy One 积分保留接口提供的小数精度，分别显示余额与优先使用的积分池。查询失败会显示未获取及失败状态。
+
+文件限制来自公开前端和账号权益，界面同时列出本机上限。PDF 本地解析每文件最多 100 MiB，图片每张最多 50 MiB、4000 万像素，上传存储最多 1 GiB。上游会继续检查格式、页数、会员和插件规则。
 
 ## HTTP API
 
-```sh
-node src/cli.mjs serve
-```
-
-服务仅监听 `127.0.0.1:17832`。`TDOCS_PROXY_PORT` 可调整端口。每个请求都需要 `Authorization: Bearer <本地 API token>`；启动日志只提示 token 文件位置，不输出其内容。默认 token 保存在运行目录的 `api-token`，也可设置至少 24 字符的 `TDOCS_PROXY_TOKEN`。
+服务监听 `127.0.0.1`，本地调用直接可用。
 
 | 方法与路径 | 用途 |
 | --- | --- |
-| `GET /health` | 服务版本和存活状态；不会验证腾讯登录态 |
-| `GET /v1/quota` | 剩余和总转写秒数，同时检查上游访问 |
-| `GET /v1/transcriptions` | 腾讯文档转写历史 |
-| `POST /v1/transcriptions?filename=sample.wav&language=16k_zh&speakers=false` | 请求体直接发送音视频字节，另带 `Idempotency-Key` |
-| `GET /v1/transcriptions/<task-id>` | 进度、错误码和结果文档链接 |
+| `GET /health` | 运行版本与服务状态 |
+| `GET /v1/tools` | 目录、调用方式和验收状态 |
+| `GET /v1/limits` | 账号余额、无限量标记和文件限制 |
+| `POST /v1/limits/refresh` | 重新读取上游权益 |
+| `POST /v1/artifacts?filename=example.pdf` | 发送文件字节并取得 artifact ID |
+| `GET /v1/artifacts/<id>/content` | 下载本地结果 |
+| `POST /v1/tools/<tool-id>/run` | 提交任务，带 `Idempotency-Key` 请求头 |
+| `GET /v1/jobs` | 最近任务 |
+| `GET /v1/jobs/<id>` | 原任务进度和结果 |
+| `GET /v1/translation/languages` | 支持的翻译方向 |
 
-例如在已私有配置 `TDOCS_PROXY_TOKEN` 的终端中：
+例如先上传，再提交 PDF 拆分。
 
 ```sh
-curl http://127.0.0.1:17832/v1/quota \
-  -H "Authorization: Bearer $TDOCS_PROXY_TOKEN"
+curl 'http://127.0.0.1:17832/v1/artifacts?filename=example.pdf' \
+  -H 'Content-Type: application/pdf' --data-binary @example.pdf
 
-curl 'http://127.0.0.1:17832/v1/transcriptions?filename=sample.wav' \
-  -H "Authorization: Bearer $TDOCS_PROXY_TOKEN" \
-  -H 'Idempotency-Key: sample-001' \
-  -H 'Content-Type: audio/wav' \
-  --data-binary @sample.wav
+curl http://127.0.0.1:17832/v1/tools/pdf_split/run \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: example-split-001' \
+  -d '{"artifacts":["<artifact-id>"],"options":{"groups":[[1],[2,3]]}}'
 ```
 
-API 接收文件字节，不接收远端下载 URL 或服务器本地路径。所有请求均校验本地 token、Host 和浏览器 Origin；该版本不提供远程监听或跨站调用。
+原 `/v1/quota`、`/v1/transcriptions` 与转写 CLI 继续可用。
 
-## 重复请求与故障恢复
+## Agent MCP 和 CLI
 
-每次新转写使用一个稳定的 `requestId` / `Idempotency-Key`。相同编号、文件和参数返回已保存的任务回执；更换文件或参数会返回 `IDEMPOTENCY_CONFLICT`。
+```sh
+node src/cli.mjs mcp
+node src/cli.mjs tools
+node src/cli.mjs quota
+node src/cli.mjs transcribe ./sample.wav --language 16k_zh --wait
+node src/cli.mjs status <transcription-task-id>
+```
 
-提交前记录请求身份。进程退出、网络断开或响应解析失败后，若无法确认腾讯是否接受任务，返回 `SUBMISSION_OUTCOME_UNKNOWN` 或 `REQUEST_OUTCOME_UNKNOWN`，保留原编号并停止自动重发。先查询 `history` 和腾讯文档网页中的转换历史，找到原任务后继续 `status` / `wait`。不要通过换编号盲目重试。
+将 `node`、`<项目路径>/src/cli.mjs`、`mcp` 配置为 Agent 的 stdio 服务。提供 43 个 `tdocs_<tool-id>` 工具和目录、额度、上传、查询，共 47 个 MCP 工具。
 
-当前请求回执不会自动清理。运行目录包含账号会话和任务资料，完整保留它可供恢复；请不要把它打包进公开仓库。HTTP 上传暂存文件在请求结束后清理。关闭本地等待不会取消已提交的腾讯任务。
+网页剪存使用腾讯文档官方 MCP，读取本机已有的 `TENCENT_DOCS_TOKEN`。Windows 也读取当前用户环境变量中的已有配置。其他工具主要使用登录时保存的网页会话。
 
-## 开发与验证
+## 文件、登录与恢复
+
+默认运行目录位于 Windows 的 `%LOCALAPPDATA%/tencent-docs-web-proxy`，其他系统使用 `~/.local/share/tencent-docs-web-proxy`。`TDOCS_PROXY_STATE_DIR` 可指定其他仓库外目录。Windows 会话使用当前用户 DPAPI 加密，独立 Chrome 配置及任务文件保存在运行目录。
+
+相同 `Idempotency-Key`、输入和参数恢复原任务。网页丢失提交响应时保留原编号，可从任务记录恢复。写入结果未知或进程中断时显示需要处理，保留已知上游编号供核对。多文件云任务逐项保存结果。
+
+输入、结果、Cookie、录音和私人文档地址保存在私有运行目录。保留该目录可继续查询历史任务。
+
+## 开发
 
 ```sh
 npm test
@@ -83,10 +99,10 @@ npm run check
 npm audit --omit=dev
 ```
 
-测试覆盖请求鉴权、固定上游地址、响应校验、任务状态、流式上传、额度错误和重复提交恢复。自动测试使用合成数据和模拟上游，不消耗账号时长。真实账号验收需要登录后用短音频验证上传、提交、结果文档和额度变化，具体结果记录在 [验证记录](docs/validation.md)。
-
-贡献时请提交最小的脱敏协议样例，标明网页版本和 `retcode`，保留 Cookie、上传临时密钥、音视频、文字稿和私人文档地址在本地。
+自动测试使用合成数据，覆盖额度、无限量、文件处理、恢复、协议解析和 WebGUI 交互。真实账号范围与剩余人工操作见验收记录。
 
 ## License
 
-MIT。腾讯文档及相关商标归各自权利人所有。
+MIT。社区项目，腾讯文档和相关商标归各自权利人所有。
+
+本机需要保留第二个地址时可设置 TDOCS_PROXY_ALIAS_PORT，两个地址共用同一组任务状态。

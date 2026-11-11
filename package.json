@@ -1,23 +1,49 @@
 {
   "name": "tencent-docs-web-proxy",
-  "version": "0.1.1",
-  "description": "Local API and CLI for Tencent Docs web audio/video transcription entitlements",
+  "version": "0.2.0",
+  "description": "Tencent Docs toolbox with local WebGUI, live entitlements, HTTP API and Agent MCP tools",
   "type": "module",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/vb2250158/tencent-docs-web-proxy.git" },
-  "bugs": { "url": "https://github.com/vb2250158/tencent-docs-web-proxy/issues" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vb2250158/tencent-docs-web-proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vb2250158/tencent-docs-web-proxy/issues"
+  },
   "homepage": "https://github.com/vb2250158/tencent-docs-web-proxy#readme",
-  "engines": { "node": ">=24.15.0" },
-  "bin": { "tdocs-transcribe": "src/cli.mjs" },
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "bin": {
+    "tdocs-transcribe": "src/cli.mjs",
+    "tdocs-toolbox": "src/cli.mjs"
+  },
   "exports": "./src/client.mjs",
-  "files": ["src", "docs", "README.md", "LICENSE", "CHANGELOG.md"],
+  "files": [
+    "src",
+    "web",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "start": "node src/cli.mjs serve",
     "test": "node --test test/*.test.mjs",
     "check": "node scripts/check.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@napi-rs/canvas": "1.1.0",
     "cos-nodejs-sdk-v5": "3.0.0",
-    "playwright-core": "1.65.0"
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.5.438",
+    "playwright-core": "1.65.0",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "jsdom": "27.4.0"
   }
 }
