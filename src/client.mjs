@@ -1,6 +1,16 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { ProxyError } from './errors.mjs';
-import { ENDPOINTS, WebTransport } from './transport.mjs';
+import { DOCS_ORIGIN, ENDPOINTS, WebTransport } from './transport.mjs';
+
+/** Normalize the protocol-relative result link used by the current web service. */
+function resultDocumentUrl(value) {
+  if (value === undefined || value === null || value === '') return null;
+  let url;
+  try { url = new URL(value, DOCS_ORIGIN); }
+  catch { throw new ProxyError('UPSTREAM_INVALID_RESPONSE', 'Tencent Docs returned an invalid result document URL.'); }
+  if (typeof value !== 'string' || url.origin !== DOCS_ORIGIN || url.username || url.password) throw new ProxyError('UPSTREAM_INVALID_RESPONSE', 'The result document URL must belong to Tencent Docs.');
+  return url.href;
+}
 
 /** Provider client; all methods use the signed-in user's Tencent Docs web session. */
 export class TencentDocsClient {
@@ -22,7 +32,8 @@ export class TencentDocsClient {
 
   async mediaInfo(objectKey) {
     const result = await this.transport.post(ENDPOINTS.mediaInfo, { objKey: objectKey, isTemp: true });
-    const seconds = result?.mediaInfo?.audio?.length ?? result?.mediaInfo?.audio?.video?.length;
+    const durations = [result?.mediaInfo?.audio?.length, result?.mediaInfo?.video?.length, result?.mediaInfo?.length];
+    const seconds = durations.map(value => typeof value === 'number' ? value : typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN).find(value => Number.isFinite(value) && value > 0);
     if (!Number.isFinite(seconds) || seconds <= 0) throw new ProxyError('INVALID_MEDIA', 'Tencent Docs could not identify a positive media duration.', { status: 422 });
     if (seconds > 18_000) throw new ProxyError('MEDIA_TOO_LONG', 'Tencent Docs web transcription supports at most five hours per file.', { status: 422 });
     return { durationSeconds: seconds };
@@ -43,7 +54,7 @@ export class TencentDocsClient {
     const result = await this.transport.post(ENDPOINTS.record, { taskId });
     const record = result?.record;
     if (!record || !Number.isFinite(record.progress) || !Number.isInteger(record.errCode)) throw new ProxyError('UPSTREAM_INVALID_RESPONSE', 'Tencent Docs task status fields are missing.');
-    return { taskId, state: record.errCode !== 0 || record.progress === -1 ? 'failed' : record.progress === 100 ? 'completed' : 'processing', progress: record.progress, errorCode: record.errCode, fileUrl: record.fileUrl ?? null };
+    return { taskId, state: record.errCode !== 0 || record.progress === -1 ? 'failed' : record.progress === 100 ? 'completed' : 'processing', progress: record.progress, errorCode: record.errCode, fileUrl: resultDocumentUrl(record.fileUrl) };
   }
 
   /** Stop only local polling on timeout/cancel; the provider task remains available. */

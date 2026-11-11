@@ -7,8 +7,9 @@ import { TencentDocsClient } from './client.mjs';
 import { TranscriptionService } from './service.mjs';
 import { createProxyServer } from './server.mjs';
 import { publicError, ProxyError } from './errors.mjs';
+import { VERSION } from './version.mjs';
 
-const HELP = `Tencent Docs web transcription proxy 0.1.0
+const HELP = `Tencent Docs web transcription proxy ${VERSION}
 Usage: node src/cli.mjs <command> [file-or-task-id] [options]
   login                    Sign in in a dedicated Chrome profile and save the session
   quota                    Read remaining transcription seconds

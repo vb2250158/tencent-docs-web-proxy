@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, unlink, rmdir, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ProxyError, publicError } from './errors.mjs';
 import { MAX_MEDIA_BYTES, submissionOptions } from './service.mjs';
+import { VERSION } from './version.mjs';
 
 function authenticated(header, token) {
   const supplied = Buffer.from(typeof header === 'string' ? header : '');
@@ -27,7 +28,7 @@ export function createProxyServer(service, { token, root, maxBytes = MAX_MEDIA_B
       if (!authenticated(request.headers.authorization, token)) throw new ProxyError('UNAUTHORIZED', 'A valid local Bearer token is required.', { status: 401 });
       const url = new URL(request.url, 'http://127.0.0.1');
       route = url.pathname;
-      if (request.method === 'GET' && route === '/health') return send(200, { status: 'ok', version: '0.1.0' });
+      if (request.method === 'GET' && route === '/health') return send(200, { status: 'ok', version: VERSION });
       if (request.method === 'GET' && route === '/v1/quota') return send(200, await service.client.quota());
       if (request.method === 'GET' && route === '/v1/transcriptions') return send(200, { records: await service.client.history() });
       const task = route.match(/^\/v1\/transcriptions\/([^/]+)$/);

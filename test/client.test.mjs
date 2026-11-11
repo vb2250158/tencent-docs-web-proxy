@@ -44,3 +44,24 @@ test('rejects unusable or overlong media before submission', async () => {
     await assert.rejects(client.mediaInfo('tmp/fixture'), error => ['INVALID_MEDIA', 'MEDIA_TOO_LONG'].includes(error.code));
   }
 });
+
+test('accepts observed decimal-string durations and top-level video duration', async () => {
+  for (const mediaInfo of [{ audio: { length: '10' } }, { audio: { length: '0' }, video: { length: '12.5' } }, { length: '4' }]) {
+    const client = new TencentDocsClient({ post: async () => ({ mediaInfo }) });
+    assert.ok((await client.mediaInfo('tmp/fixture')).durationSeconds > 0);
+  }
+  for (const length of ['', 'Infinity', 'unexpected', '-1']) {
+    const client = new TencentDocsClient({ post: async () => ({ mediaInfo: { audio: { length } } }) });
+    await assert.rejects(client.mediaInfo('tmp/fixture'), { code: 'INVALID_MEDIA' });
+  }
+});
+
+test('normalizes the observed protocol-relative result URL and rejects external destinations', async () => {
+  const record = { progress: 100, errCode: 0, fileUrl: '//docs.qq.com/aio/synthetic-fixture' };
+  const client = new TencentDocsClient({ post: async () => ({ record }) });
+  assert.equal((await client.status('fixture')).fileUrl, 'https://docs.qq.com/aio/synthetic-fixture');
+  for (const url of ['javascript:alert(1)', '//example.com/private', 'https://docs.qq.com@example.com/', 'http://docs.qq.com/aio/test']) {
+    record.fileUrl = url;
+    await assert.rejects(client.status('fixture'), { code: 'UPSTREAM_INVALID_RESPONSE' });
+  }
+});
